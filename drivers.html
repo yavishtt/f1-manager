@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Drivers — F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--red:#E10600;--red-dim:#9b0400;--black:#0a0a0a;--dark:#111111;--card:#161616;--border:rgba(255,255,255,0.07);--text:#f0f0f0;--muted:#888;--mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--black);color:var(--text);font-family:var(--body);overflow-x:hidden;cursor:none;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.35;}
+    .cursor{width:10px;height:10px;background:var(--red);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;}
+    .cursor-ring{width:36px;height:36px;border:1px solid rgba(225,6,0,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+    nav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.9);backdrop-filter:blur(12px);}
+    .nav-logo{font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;color:var(--text);text-decoration:none;}
+    .nav-logo span{color:var(--red);}
+    .nav-links{display:flex;gap:36px;list-style:none;}
+    .nav-links a{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+    .nav-links a:hover,.nav-links a.active{color:var(--text);}
+    .nav-cta{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;background:var(--red);color:#fff;border:none;padding:10px 24px;cursor:none;text-decoration:none;}
+    .page-header{padding:120px 80px 60px;background:var(--dark);position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+    .page-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 80% 50%,rgba(225,6,0,0.07) 0%,transparent 70%);}
+    .page-header-bg{position:absolute;right:80px;bottom:-20px;font-family:var(--display);font-size:220px;font-weight:900;color:rgba(225,6,0,0.04);line-height:1;user-select:none;pointer-events:none;}
+    .breadcrumb{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;}
+    .breadcrumb a:hover{color:var(--red);}
+    .breadcrumb span{color:var(--red);}
+    .page-title{font-family:var(--display);font-size:clamp(60px,8vw,100px);font-weight:900;text-transform:uppercase;line-height:0.9;letter-spacing:-0.02em;position:relative;z-index:2;}
+    .page-title em{color:var(--red);font-style:normal;}
+    .page-desc{font-size:15px;color:var(--muted);margin-top:20px;max-width:500px;line-height:1.7;position:relative;z-index:2;}
+    .filters-bar{background:var(--black);border-bottom:1px solid var(--border);padding:20px 80px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:64px;z-index:800;}
+    .search-box{position:relative;flex:1;min-width:220px;max-width:360px;}
+    .search-box input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:14px;padding:11px 16px 11px 40px;outline:none;transition:border-color 0.2s;}
+    .search-box input:focus{border-color:rgba(225,6,0,0.4);}
+    .search-box input::placeholder{color:#555;}
+    .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
+    .filter-group{display:flex;gap:8px;flex-wrap:wrap;}
+    .filter-btn{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--muted);padding:9px 18px;cursor:none;transition:all 0.2s;}
+    .filter-btn:hover,.filter-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
+    .results-count{font-family:var(--mono);font-size:10px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-left:auto;}
+    .drivers-container{padding:48px 80px 80px;}
+    .drivers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px;}
+
+    /* CARD — photo fills card like a poster */
+    .driver-card{background:var(--card);position:relative;overflow:hidden;aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:flex-end;cursor:none;text-decoration:none;color:var(--text);transition:transform 0.35s ease;}
+    .driver-card:hover{transform:scale(1.025);z-index:2;}
+    .driver-card:hover .driver-photo{transform:scale(1.06);}
+    .driver-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;transition:transform 0.5s ease;}
+    .driver-photo-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(160deg,rgba(255,255,255,0.05) 0%,#0a0a0a 70%);}
+    .driver-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.94) 0%,rgba(0,0,0,0.5) 40%,rgba(0,0,0,0.04) 100%);}
+    .driver-team-bar{position:absolute;top:0;left:0;width:4px;height:100%;z-index:3;}
+    .driver-num-bg{position:absolute;top:10px;right:12px;font-family:var(--display);font-size:80px;font-weight:900;color:rgba(255,255,255,0.07);line-height:1;pointer-events:none;z-index:3;}
+    .driver-pts{position:absolute;top:16px;left:16px;z-index:4;}
+    .driver-pts span{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+    .driver-pts strong{display:block;font-family:var(--display);font-size:20px;font-weight:900;color:#fff;line-height:1;}
+    .driver-card-info{position:relative;z-index:4;padding:20px 20px 20px 24px;}
+    .driver-name-text{font-family:var(--display);font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:0.02em;line-height:1;}
+    .driver-meta-text{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;color:rgba(255,255,255,0.5);margin-top:5px;text-transform:uppercase;}
+    .driver-stat-row{display:flex;gap:16px;margin-top:10px;}
+    .dstat .dl{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+    .dstat .dv{font-family:var(--display);font-size:16px;font-weight:700;line-height:1;color:#fff;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:2000;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--dark);border:1px solid var(--border);max-width:740px;width:100%;max-height:90vh;overflow-y:auto;position:relative;}
+    .modal-close{position:absolute;top:14px;right:14px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:var(--display);font-size:13px;font-weight:700;padding:7px 13px;cursor:none;z-index:10;transition:color 0.2s,border-color 0.2s;}
+    .modal-close:hover{color:var(--red);border-color:var(--red);}
+    .modal-hero{position:relative;height:260px;overflow:hidden;background:#0a0a0a;}
+    .modal-hero-img{width:100%;height:100%;object-fit:cover;object-position:top center;}
+    .modal-hero-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:100px;}
+    .modal-hero-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.2) 55%,transparent 100%);}
+    .modal-hero-content{position:absolute;bottom:22px;left:28px;}
+    .modal-number{font-family:var(--display);font-size:60px;font-weight:900;color:rgba(255,255,255,0.07);line-height:1;margin-bottom:-12px;}
+    .modal-name{font-family:var(--display);font-size:38px;font-weight:900;text-transform:uppercase;line-height:0.95;letter-spacing:-0.01em;}
+    .modal-team-line{font-family:var(--mono);font-size:10px;letter-spacing:0.15em;color:rgba(255,255,255,0.55);text-transform:uppercase;margin-top:8px;display:flex;align-items:center;gap:8px;}
+    .modal-team-dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
+    .modal-body{padding:24px 28px 32px;}
+    .modal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:24px;}
+    .modal-stat{background:var(--card);padding:16px 12px;text-align:center;}
+    .modal-stat .label{font-family:var(--mono);font-size:9px;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+    .modal-stat .val{font-family:var(--display);font-size:28px;font-weight:900;line-height:1;}
+    .modal-bio{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:18px;}
+    .modal-section-title{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+    .modal-tags{display:flex;flex-wrap:wrap;gap:8px;}
+    .tag{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 10px;}
+    @media(max-width:900px){.filters-bar,.drivers-container,.page-header{padding-left:24px;padding-right:24px;}nav{padding:0 24px;}.nav-links{display:none;}}
+  </style>
+</head>
+<body>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+  <nav>
+    <a href="index.html" class="nav-logo">F1 <span>Manager</span></a>
+    <ul class="nav-links">
+      <li><a href="drivers.html" class="active">Drivers</a></li>
+      <li><a href="teams.html">Teams</a></li>
+      <li><a href="races.html">Races</a></li>
+      <li><a href="circuits.html">Circuits</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="login.html" class="nav-cta">Sign In</a>
+  </nav>
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">Home</a> <span>/</span> Drivers</div>
+    <h1 class="page-title">2025<br><em>Drivers</em></h1>
+    <p class="page-desc">All 20 drivers in the 2025 Formula 1 World Championship. Click any card for the full profile.</p>
+    <div class="page-header-bg">D</div>
+  </div>
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search driver or team…" oninput="filterDrivers()"/>
+    </div>
+    <div class="filter-group">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('red-bull',this)">Red Bull</button>
+      <button class="filter-btn" onclick="setFilter('ferrari',this)">Ferrari</button>
+      <button class="filter-btn" onclick="setFilter('mclaren',this)">McLaren</button>
+      <button class="filter-btn" onclick="setFilter('mercedes',this)">Mercedes</button>
+    </div>
+    <span class="results-count" id="resultsCount">20 Drivers</span>
+  </div>
+  <div class="drivers-container">
+    <div class="drivers-grid" id="driversGrid"></div>
+  </div>
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal">
+      <button class="modal-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">✕ Close</button>
+      <div class="modal-hero">
+        <img class="modal-hero-img" id="modalImg" src="" alt=""/>
+        <div class="modal-hero-fallback" id="modalFallback" style="display:none"></div>
+        <div class="modal-hero-overlay"></div>
+        <div class="modal-hero-content">
+          <div class="modal-number" id="modalNumber"></div>
+          <div class="modal-name" id="modalName"></div>
+          <div class="modal-team-line" id="modalTeam"></div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-stats" id="modalStats"></div>
+        <p class="modal-bio" id="modalBio"></p>
+        <p class="modal-section-title">Driver Traits</p>
+        <div class="modal-tags" id="modalTags"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+  const BASE = 'https://www.formula1.com/content/dam/fom-website/drivers';
+  const DRIVERS = [
+    {id:'verstappen',num:1,name:'Max Verstappen',fname:'Verstappen',team:'Red Bull Racing',teamKey:'red-bull',teamColor:'#3671C6',nat:'🇳🇱 NED',pos:1,pts:77,wins:4,poles:3,img:`${BASE}/M/MAXVER01_Max_Verstappen/maxver01.png`,avatar:'🏆',bio:'Four-time World Champion and the most dominant driver of the modern era. The Dutchman has been virtually unstoppable since 2021.',tags:['4× Champion','Overtake Master','Tyre Specialist']},
+    {id:'perez',num:11,name:'Sergio Pérez',fname:'Pérez',team:'Red Bull Racing',teamKey:'red-bull',teamColor:'#3671C6',nat:'🇲🇽 MEX',pos:7,pts:28,wins:0,poles:0,img:`${BASE}/S/SERPER01_Sergio_Perez/serper01.png`,avatar:'🌮',bio:'The Mexican veteran brings crucial championship points to Red Bull. Known as "The Taxman" for his ability to take points from rivals.',tags:['Tyre Whisperer','Master of Monaco','Comeback King']},
+    {id:'leclerc',num:16,name:'Charles Leclerc',fname:'Leclerc',team:'Scuderia Ferrari',teamKey:'ferrari',teamColor:'#E8002D',nat:'🇲🇨 MON',pos:2,pts:61,wins:2,poles:5,img:`${BASE}/C/CHALEC01_Charles_Leclerc/chalec01.png`,avatar:'🐴',bio:'The Monégasque prodigy is Ferrari\'s lead driver and a multiple pole-position maestro. He joined Ferrari in 2019.',tags:['Pole King','Ferrari Favourite','Monaco Native']},
+    {id:'hamilton',num:44,name:'Lewis Hamilton',fname:'Hamilton',team:'Scuderia Ferrari',teamKey:'ferrari',teamColor:'#E8002D',nat:'🇬🇧 GBR',pos:5,pts:40,wins:0,poles:1,img:`${BASE}/L/LEWHAM01_Lewis_Hamilton/lewham01.png`,avatar:'⭐',bio:'Seven-time World Champion and the most successful F1 driver of all time. Lewis made a bombshell move to Ferrari for 2025.',tags:['7× Champion','103 Race Wins','GOAT']},
+    {id:'norris',num:4,name:'Lando Norris',fname:'Norris',team:'McLaren',teamKey:'mclaren',teamColor:'#FF8000',nat:'🇬🇧 GBR',pos:3,pts:58,wins:1,poles:2,img:`${BASE}/L/LANNOR01_Lando_Norris/lannor01.png`,avatar:'🎯',bio:'British racer Lando Norris claimed his maiden race win in 2024 and is now a genuine championship contender with the resurgent McLaren team.',tags:['Social Media King','McLaren Lifeblood','Wet Specialist']},
+    {id:'piastri',num:81,name:'Oscar Piastri',fname:'Piastri',team:'McLaren',teamKey:'mclaren',teamColor:'#FF8000',nat:'🇦🇺 AUS',pos:4,pts:49,wins:2,poles:1,img:`${BASE}/O/OSCPIA01_Oscar_Piastri/oscpia01.png`,avatar:'⚡',bio:'Rookie sensation turned race winner. The young Australian immediately proved his worth at McLaren.',tags:['Cold Operator','F2 2022 Champion','Silent Achiever']},
+    {id:'russell',num:63,name:'George Russell',fname:'Russell',team:'Mercedes-AMG',teamKey:'mercedes',teamColor:'#27F4D2',nat:'🇬🇧 GBR',pos:6,pts:34,wins:0,poles:1,img:`${BASE}/G/GEORUS01_George_Russell/georus01.png`,avatar:'📐',bio:'"Mr. Saturday" — George Russell is now the undisputed Mercedes team leader following Hamilton\'s departure to Ferrari.',tags:['Mr. Saturday','Williams Loyalist','Data Driven']},
+    {id:'antonelli',num:12,name:'Kimi Antonelli',fname:'Antonelli',team:'Mercedes-AMG',teamKey:'mercedes',teamColor:'#27F4D2',nat:'🇮🇹 ITA',pos:10,pts:18,wins:0,poles:0,img:`${BASE}/K/KIMANT01_Kimi_Antonelli/kimant01.png`,avatar:'🌟',bio:'The highly touted Italian teenager was handed Hamilton\'s Mercedes seat for 2025 and is considered a generational talent.',tags:['Next Gen Prodigy','Mercedes Academy','Teen Sensation']},
+    {id:'alonso',num:14,name:'Fernando Alonso',fname:'Alonso',team:'Aston Martin',teamKey:'aston',teamColor:'#229971',nat:'🇪🇸 ESP',pos:8,pts:24,wins:0,poles:0,img:`${BASE}/F/FERALO01_Fernando_Alonso/feralo01.png`,avatar:'🦁',bio:'Two-time World Champion and arguably the greatest raw talent to ever sit in a Formula 1 cockpit. Still going strong in his 40s.',tags:['El Plan','2× Champion','Ageless Wonder']},
+    {id:'stroll',num:18,name:'Lance Stroll',fname:'Stroll',team:'Aston Martin',teamKey:'aston',teamColor:'#229971',nat:'🇨🇦 CAN',pos:14,pts:8,wins:0,poles:0,img:`${BASE}/L/LANSTR01_Lance_Stroll/lanstr01.png`,avatar:'🍁',bio:'Canadian driver Lance Stroll races for the team partially owned by his father. Has shown genuine speed in the wet.',tags:['Street Circuit Specialist','Wet Weather Ace']},
+    {id:'gasly',num:10,name:'Pierre Gasly',fname:'Gasly',team:'Alpine',teamKey:'alpine',teamColor:'#0093CC',nat:'🇫🇷 FRA',pos:11,pts:14,wins:0,poles:0,img:`${BASE}/P/PIEGAS01_Pierre_Gasly/piegas01.png`,avatar:'🥐',bio:'Gasly won memorably at Monza in 2020 and continues to be one of the midfield\'s most experienced hands.',tags:['Monza Winner','BWT Ambassador','Red Bull Graduate']},
+    {id:'doohan',num:7,name:'Jack Doohan',fname:'Doohan',team:'Alpine',teamKey:'alpine',teamColor:'#0093CC',nat:'🇦🇺 AUS',pos:18,pts:4,wins:0,poles:0,img:`${BASE}/J/JACDOO01_Jack_Doohan/jacdoo01.png`,avatar:'🦘',bio:'Son of MotoGP legend Mick Doohan, Jack joins Alpine for 2025 after impressing in Formula 2.',tags:['Alpine Academy','F2 Graduate','Legacy Name']},
+    {id:'albon',num:23,name:'Alex Albon',fname:'Albon',team:'Williams',teamKey:'williams',teamColor:'#64C4FF',nat:'🇹🇭 THA',pos:12,pts:11,wins:0,poles:0,img:`${BASE}/A/ALEALB01_Alex_Albon/alealb01.png`,avatar:'🌏',bio:'The Thai-British driver has revitalised Williams with strong performances that regularly punch above the car\'s weight.',tags:['Williams Saviour','Points Machine']},
+    {id:'sainz',num:55,name:'Carlos Sainz',fname:'Sainz',team:'Williams',teamKey:'williams',teamColor:'#64C4FF',nat:'🇪🇸 ESP',pos:9,pts:20,wins:0,poles:0,img:`${BASE}/C/CARSAI01_Carlos_Sainz/carsai01.png`,avatar:'🐂',bio:'After being replaced at Ferrari by Hamilton, Sainz took the challenge at Williams for 2025 — bringing huge experience.',tags:['Smooth Operator','Ferrari Exile','Williams Boost']},
+  ];
+  let activeFilter='all';
+  function renderDrivers(list){
+    const grid=document.getElementById('driversGrid');
+    grid.innerHTML='';
+    list.forEach(d=>{
+      const card=document.createElement('a');
+      card.href='#';card.className='driver-card';card.dataset.team=d.teamKey;
+      card.onclick=e=>{e.preventDefault();openModal(d);};
+      card.innerHTML=`
+        <img class="driver-photo" src="${d.img}" alt="${d.name}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="driver-photo-fallback">${d.avatar}</div>
+        <div class="driver-card-overlay"></div>
+        <div class="driver-team-bar" style="background:${d.teamColor}"></div>
+        <div class="driver-num-bg">${d.num}</div>
+        <div class="driver-pts"><span>PTS</span><strong>${d.pts}</strong></div>
+        <div class="driver-card-info">
+          <div class="driver-name-text">${d.fname}</div>
+          <div class="driver-meta-text">${d.nat} · ${d.team}</div>
+          <div class="driver-stat-row">
+            <div class="dstat"><div class="dl">Pos</div><div class="dv">P${d.pos}</div></div>
+            <div class="dstat"><div class="dl">Wins</div><div class="dv">${d.wins}</div></div>
+            <div class="dstat"><div class="dl">Poles</div><div class="dv">${d.poles}</div></div>
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    });
+    document.getElementById('resultsCount').textContent=`${list.length} Driver${list.length!==1?'s':''}`;
+  }
+  function filterDrivers(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    renderDrivers(DRIVERS.filter(d=>(activeFilter==='all'||d.teamKey===activeFilter)&&(!q||d.name.toLowerCase().includes(q)||d.team.toLowerCase().includes(q))));
+  }
+  function setFilter(key,btn){
+    activeFilter=key;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');filterDrivers();
+  }
+  function openModal(d){
+    const img=document.getElementById('modalImg'),fb=document.getElementById('modalFallback');
+    img.src=d.img;img.style.display='block';fb.style.display='none';
+    img.onerror=()=>{img.style.display='none';fb.textContent=d.avatar;fb.style.display='flex';};
+    document.getElementById('modalNumber').textContent=d.num;
+    document.getElementById('modalName').textContent=d.fname;
+    document.getElementById('modalTeam').innerHTML=`<span class="modal-team-dot" style="background:${d.teamColor}"></span>${d.nat} · ${d.team}`;
+    document.getElementById('modalStats').innerHTML=`
+      <div class="modal-stat"><div class="label">Position</div><div class="val">P${d.pos}</div></div>
+      <div class="modal-stat"><div class="label">Points</div><div class="val">${d.pts}</div></div>
+      <div class="modal-stat"><div class="label">Wins</div><div class="val">${d.wins}</div></div>
+      <div class="modal-stat"><div class="label">Poles</div><div class="val">${d.poles}</div></div>`;
+    document.getElementById('modalBio').textContent=d.bio;
+    document.getElementById('modalTags').innerHTML=d.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal(e){if(e.target===document.getElementById('modalOverlay'))document.getElementById('modalOverlay').classList.remove('open');}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modalOverlay').classList.remove('open');});
+  renderDrivers(DRIVERS);
+  const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+  let mouseX=0,mouseY=0,ringX=0,ringY=0;
+  document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;cursor.style.transform=`translate(${mouseX-5}px,${mouseY-5}px)`;});
+  function animateRing(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;ring.style.transform=`translate(${ringX-18}px,${ringY-18}px)`;requestAnimationFrame(animateRing);}
+  animateRing();
+  </script>
+</body>
+</html>

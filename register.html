@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red:#E10600; --red-dim:#9b0400;
+      --black:#0a0a0a; --dark:#111111; --card:#161616;
+      --border:rgba(255,255,255,0.07); --border-focus:rgba(225,6,0,0.5);
+      --text:#f0f0f0; --muted:#888;
+      --mono:'Share Tech Mono',monospace;
+      --display:'Barlow Condensed',sans-serif;
+      --body:'Barlow',sans-serif;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--black);color:var(--text);font-family:var(--body);min-height:100vh;display:grid;grid-template-columns:1fr 1fr;overflow-x:hidden;cursor:none;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.35;}
+    .cursor{width:10px;height:10px;background:var(--red);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;}
+    .cursor-ring{width:36px;height:36px;border:1px solid rgba(225,6,0,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+
+    /* LEFT PANEL */
+    .left-panel{background:var(--dark);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:80px;position:relative;overflow:hidden;}
+    .left-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 30% 60%,rgba(225,6,0,0.10) 0%,transparent 70%);}
+    .left-bg-number{position:absolute;bottom:-20px;right:-20px;font-family:var(--display);font-size:280px;font-weight:900;color:rgba(225,6,0,0.05);line-height:1;user-select:none;pointer-events:none;}
+    .brand-link{font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;color:var(--text);text-decoration:none;margin-bottom:80px;position:relative;z-index:2;}
+    .brand-link span{color:var(--red);}
+    .left-headline{font-family:var(--display);font-size:clamp(52px,6vw,88px);font-weight:900;line-height:0.92;text-transform:uppercase;letter-spacing:-0.02em;position:relative;z-index:2;margin-bottom:24px;}
+    .left-headline em{color:var(--red);font-style:normal;}
+    .left-sub{font-size:15px;font-weight:300;color:var(--muted);line-height:1.7;max-width:360px;position:relative;z-index:2;margin-bottom:48px;}
+    .step-list{list-style:none;display:flex;flex-direction:column;gap:16px;position:relative;z-index:2;}
+    .step-list li{display:flex;align-items:center;gap:16px;font-size:14px;color:var(--muted);}
+    .step-num{font-family:var(--display);font-size:28px;font-weight:900;color:var(--red);line-height:1;min-width:32px;}
+
+    /* RIGHT — FORM */
+    .right-panel{display:flex;flex-direction:column;justify-content:center;padding:60px 80px 60px 60px;background:var(--black);overflow-y:auto;}
+    .form-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:0.25em;color:var(--red);text-transform:uppercase;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+    .form-eyebrow::before{content:'';display:block;width:24px;height:1px;background:var(--red);}
+    .form-title{font-family:var(--display);font-size:44px;font-weight:900;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:8px;}
+    .form-subtitle{font-size:14px;color:var(--muted);margin-bottom:36px;}
+    .form-subtitle a{color:var(--red);text-decoration:none;}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .field{margin-bottom:20px;}
+    .field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+    .field input,.field select{width:100%;background:var(--card);border:1px solid var(--border);border-left:3px solid transparent;color:var(--text);font-family:var(--body);font-size:15px;padding:13px 16px;outline:none;transition:border-color 0.2s,border-left-color 0.2s,background 0.2s;appearance:none;}
+    .field input::placeholder{color:#444;}
+    .field input:focus,.field select:focus{border-color:var(--border-focus);border-left-color:var(--red);background:#1a1a1a;}
+    .field select option{background:var(--dark);color:var(--text);}
+
+    .password-strength{margin-top:8px;height:3px;background:var(--border);position:relative;overflow:hidden;}
+    .strength-bar{height:100%;width:0%;transition:width 0.3s,background 0.3s;}
+
+    .checkbox-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:24px;}
+    .checkbox-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--red);cursor:none;margin-top:2px;flex-shrink:0;}
+    .checkbox-row label{font-size:13px;color:var(--muted);line-height:1.5;}
+    .checkbox-row label a{color:var(--red);text-decoration:none;}
+
+    .btn-submit{width:100%;background:var(--red);color:#fff;border:none;font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;padding:18px;cursor:none;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));transition:background 0.2s,transform 0.1s;position:relative;overflow:hidden;}
+    .btn-submit:hover{background:var(--red-dim);transform:translateY(-2px);}
+    .btn-submit .btn-shine{position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transform:skewX(-20deg);transition:left 0.5s ease;}
+    .btn-submit:hover .btn-shine{left:150%;}
+
+    .divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+    .btn-login{display:block;width:100%;text-align:center;border:1px solid var(--border);color:var(--muted);font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:16px;text-decoration:none;transition:border-color 0.2s,color 0.2s,background 0.2s;}
+    .btn-login:hover{border-color:rgba(225,6,0,0.4);color:var(--text);background:rgba(225,6,0,0.05);}
+
+    .form-error{background:rgba(225,6,0,0.08);border:1px solid rgba(225,6,0,0.3);border-left:3px solid var(--red);padding:12px 16px;margin-bottom:20px;font-family:var(--mono);font-size:11px;letter-spacing:0.08em;color:#ff6b6b;display:none;}
+    .form-error.show{display:block;}
+    .form-success{background:rgba(0,200,80,0.08);border:1px solid rgba(0,200,80,0.3);border-left:3px solid #00c850;padding:12px 16px;margin-bottom:20px;font-family:var(--mono);font-size:11px;letter-spacing:0.08em;color:#6bffaa;display:none;}
+    .form-success.show{display:block;}
+
+    @media(max-width:900px){body{grid-template-columns:1fr;}.left-panel{display:none;}.right-panel{padding:60px 24px;}.grid-2{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- LEFT -->
+  <div class="left-panel">
+    <a href="index.html" class="brand-link">F1 <span>Manager</span></a>
+    <h1 class="left-headline">Join<br>the<br><em>Paddock.</em></h1>
+    <p class="left-sub">Create your free account and get access to the most comprehensive F1 data hub on the web.</p>
+    <ol class="step-list">
+      <li><span class="step-num">01</span>Fill in your details below</li>
+      <li><span class="step-num">02</span>Verify your email address</li>
+      <li><span class="step-num">03</span>Enter the Pit Wall</li>
+    </ol>
+    <div class="left-bg-number">R</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <p class="form-eyebrow">New Account</p>
+    <h2 class="form-title">Register</h2>
+    <p class="form-subtitle">Already have an account? <a href="login.html">Sign in →</a></p>
+
+    <div class="form-error" id="formError"></div>
+    <div class="form-success" id="formSuccess"></div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="fname">First Name</label>
+        <input type="text" id="fname" placeholder="Lewis" />
+      </div>
+      <div class="field">
+        <label for="lname">Last Name</label>
+        <input type="text" id="lname" placeholder="Hamilton" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+    </div>
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="pitwall_fan44" />
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="fav-team">Favourite Team</label>
+        <select id="fav-team">
+          <option value="">Select team…</option>
+          <option>Red Bull Racing</option>
+          <option>Scuderia Ferrari</option>
+          <option>McLaren</option>
+          <option>Mercedes-AMG</option>
+          <option>Aston Martin</option>
+          <option>Alpine</option>
+          <option>Williams</option>
+          <option>Visa Cash App RB</option>
+          <option>Stake F1 / Sauber</option>
+          <option>Haas F1</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="country">Country</label>
+        <select id="country">
+          <option value="">Select country…</option>
+          <option>India</option>
+          <option>United Kingdom</option>
+          <option>Germany</option>
+          <option>Netherlands</option>
+          <option>Australia</option>
+          <option>Monaco</option>
+          <option>United States</option>
+          <option>Italy</option>
+          <option>Spain</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Min. 8 characters" oninput="checkStrength(this.value)" />
+      <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
+    </div>
+
+    <div class="field">
+      <label for="confirm">Confirm Password</label>
+      <input type="password" id="confirm" placeholder="Repeat password" />
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="terms" />
+      <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. This is a college project — no real data is stored.</label>
+    </div>
+
+    <button class="btn-submit" onclick="handleRegister()">
+      <span class="btn-shine"></span>
+      Create Account
+    </button>
+    <div class="divider">or</div>
+    <a href="login.html" class="btn-login">Sign Into Existing Account</a>
+  </div>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mouseX=0,mouseY=0,ringX=0,ringY=0;
+    document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;cursor.style.transform=`translate(${mouseX-5}px,${mouseY-5}px)`;});
+    function animateRing(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;ring.style.transform=`translate(${ringX-18}px,${ringY-18}px)`;requestAnimationFrame(animateRing);}
+    animateRing();
+
+    function checkStrength(val) {
+      const bar = document.getElementById('strengthBar');
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const colors = ['#E10600','#ff6b00','#f0c000','#00c850'];
+      const widths = ['25%','50%','75%','100%'];
+      bar.style.width = val.length ? widths[score-1]||'10%' : '0%';
+      bar.style.background = val.length ? colors[score-1]||'#E10600' : 'transparent';
+    }
+
+    function showError(msg){const e=document.getElementById('formError');e.textContent='⚠  '+msg;e.classList.add('show');document.getElementById('formSuccess').classList.remove('show');}
+    function showSuccess(msg){const s=document.getElementById('formSuccess');s.textContent='✓  '+msg;s.classList.add('show');document.getElementById('formError').classList.remove('show');}
+
+    function handleRegister() {
+      const fname=document.getElementById('fname').value.trim();
+      const lname=document.getElementById('lname').value.trim();
+      const email=document.getElementById('email').value.trim();
+      const username=document.getElementById('username').value.trim();
+      const password=document.getElementById('password').value;
+      const confirm=document.getElementById('confirm').value;
+      const terms=document.getElementById('terms').checked;
+
+      if(!fname||!lname) return showError('Please enter your first and last name.');
+      if(!email||!email.includes('@')) return showError('Please enter a valid email address.');
+      if(!username||username.length<3) return showError('Username must be at least 3 characters.');
+      if(password.length<8) return showError('Password must be at least 8 characters.');
+      if(password!==confirm) return showError('Passwords do not match.');
+      if(!terms) return showError('Please accept the Terms of Service to continue.');
+
+      showSuccess('Account created! Redirecting to sign in…');
+      setTimeout(()=>window.location.href='login.html', 2000);
+    }
+  </script>
+</body>
+</html>

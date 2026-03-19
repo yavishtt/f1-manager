@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Race Calendar — F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--red:#E10600;--red-dim:#9b0400;--black:#0a0a0a;--dark:#111111;--card:#161616;--border:rgba(255,255,255,0.07);--text:#f0f0f0;--muted:#888;--mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--black);color:var(--text);font-family:var(--body);overflow-x:hidden;cursor:none;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.35;}
+    .cursor{width:10px;height:10px;background:var(--red);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;}
+    .cursor-ring{width:36px;height:36px;border:1px solid rgba(225,6,0,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.9);backdrop-filter:blur(12px);}
+    .nav-logo{font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;color:var(--text);text-decoration:none;}
+    .nav-logo span{color:var(--red);}
+    .nav-links{display:flex;gap:36px;list-style:none;}
+    .nav-links a{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+    .nav-links a:hover,.nav-links a.active{color:var(--text);}
+    .nav-cta{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;background:var(--red);color:#fff;border:none;padding:10px 24px;cursor:none;text-decoration:none;transition:background 0.2s;}
+    .nav-cta:hover{background:var(--red-dim);}
+
+    .page-header{padding:120px 80px 60px;background:var(--dark);position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+    .page-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 80% 50%,rgba(225,6,0,0.07) 0%,transparent 70%);}
+    .page-header-bg{position:absolute;right:80px;bottom:-20px;font-family:var(--display);font-size:220px;font-weight:900;color:rgba(225,6,0,0.04);line-height:1;user-select:none;pointer-events:none;}
+    .breadcrumb{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;transition:color 0.2s;}
+    .breadcrumb a:hover{color:var(--red);}
+    .breadcrumb span{color:var(--red);}
+    .page-title{font-family:var(--display);font-size:clamp(60px,8vw,100px);font-weight:900;text-transform:uppercase;line-height:0.9;letter-spacing:-0.02em;position:relative;z-index:2;}
+    .page-title em{color:var(--red);font-style:normal;}
+    .page-desc{font-size:15px;color:var(--muted);margin-top:20px;max-width:500px;line-height:1.7;position:relative;z-index:2;}
+
+    /* NEXT RACE HERO */
+    .next-race-hero{background:var(--dark);padding:48px 80px;border-bottom:1px solid var(--border);}
+    .next-race-label{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;color:var(--red);text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+    .next-race-label::before{content:'';width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1.5s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.3);}}
+    .next-race-content{display:grid;grid-template-columns:1fr auto;align-items:center;gap:48px;}
+    .next-race-name{font-family:var(--display);font-size:clamp(36px,5vw,64px);font-weight:900;text-transform:uppercase;line-height:0.95;letter-spacing:-0.01em;}
+    .next-race-circuit{font-family:var(--mono);font-size:12px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-top:12px;}
+    .countdown{display:flex;gap:2px;}
+    .countdown-unit{background:var(--card);padding:20px 24px;text-align:center;min-width:80px;}
+    .countdown-val{font-family:var(--display);font-size:44px;font-weight:900;line-height:1;}
+    .countdown-label{font-family:var(--mono);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+    /* RACE LIST */
+    .calendar-section{padding:60px 80px 80px;}
+    .calendar-filters{display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap;}
+    .cal-filter-btn{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;background:var(--card);border:1px solid var(--border);color:var(--muted);padding:9px 18px;cursor:none;transition:all 0.2s;}
+    .cal-filter-btn:hover,.cal-filter-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
+
+    .race-list{display:flex;flex-direction:column;gap:2px;}
+    .race-row{display:grid;grid-template-columns:100px 1fr 200px 180px;align-items:center;gap:24px;padding:24px 32px;background:var(--card);border-left:3px solid transparent;text-decoration:none;color:var(--text);cursor:none;transition:border-color 0.2s,background 0.2s,padding-left 0.2s;}
+    .race-row:hover{background:#1e1e1e;padding-left:40px;}
+    .race-row.upcoming{border-left-color:var(--red);}
+    .race-row.completed{opacity:0.55;border-left-color:#333;}
+    .race-row.sprint{border-left-color:#FF8000;}
+    .race-round-col{text-align:center;}
+    .round-num{font-family:var(--display);font-size:36px;font-weight:900;line-height:1;}
+    .round-label{font-family:var(--mono);font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;}
+    .race-info-col{}
+    .race-flag-name{display:flex;align-items:center;gap:12px;}
+    .race-flag{font-size:24px;}
+    .race-name{font-family:var(--display);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;}
+    .race-circuit-name{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-top:4px;}
+    .race-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+    .badge{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;padding:3px 8px;}
+    .badge-next{background:var(--red);color:#fff;}
+    .badge-sprint{background:#FF8000;color:#fff;}
+    .badge-done{background:var(--card);border:1px solid var(--border);color:var(--muted);}
+    .race-date-col{text-align:right;}
+    .race-date-main{font-family:var(--display);font-size:20px;font-weight:700;}
+    .race-date-sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;margin-top:4px;text-transform:uppercase;}
+    .winner-col{text-align:right;}
+    .winner-label{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+    .winner-name{font-family:var(--display);font-size:18px;font-weight:700;text-transform:uppercase;}
+
+    /* CIRCUIT MAP SECTION */
+    .circuits-section{padding:60px 80px;background:var(--dark);border-top:1px solid var(--border);}
+    .section-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:0.25em;color:var(--red);text-transform:uppercase;margin-bottom:12px;}
+    .section-title{font-family:var(--display);font-size:36px;font-weight:900;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:32px;}
+    .circuits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px;}
+    .circuit-card{background:var(--card);padding:28px;cursor:none;text-decoration:none;color:var(--text);display:block;transition:background 0.2s;position:relative;overflow:hidden;}
+    .circuit-card:hover{background:#1c1c1c;}
+    .circuit-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--red);transform:scaleX(0);transition:transform 0.3s ease;transform-origin:left;}
+    .circuit-card:hover::after{transform:scaleX(1);}
+    .circuit-country{font-size:28px;margin-bottom:12px;}
+    .circuit-name{font-family:var(--display);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;line-height:1.1;margin-bottom:8px;}
+    .circuit-meta{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;line-height:1.8;}
+
+    @media(max-width:900px){.calendar-section,.circuits-section,.next-race-hero,.page-header{padding-left:24px;padding-right:24px;}nav{padding:0 24px;}.nav-links{display:none;}.race-row{grid-template-columns:60px 1fr;}.race-date-col,.winner-col{display:none;}.next-race-content{grid-template-columns:1fr;}.countdown{justify-content:center;}}
+  </style>
+</head>
+<body>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <nav>
+    <a href="index.html" class="nav-logo">F1 <span>Manager</span></a>
+    <ul class="nav-links">
+      <li><a href="drivers.html">Drivers</a></li>
+      <li><a href="teams.html">Teams</a></li>
+      <li><a href="races.html" class="active">Races</a></li>
+      <li><a href="circuits.html">Circuits</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="login.html" class="nav-cta">Sign In</a>
+  </nav>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">Home</a> <span>/</span> Races</div>
+    <h1 class="page-title">2025<br><em>Calendar</em></h1>
+    <p class="page-desc">24 races across 21 countries. The complete 2025 Formula 1 World Championship schedule with results, circuits, and sprint weekends.</p>
+    <div class="page-header-bg">R</div>
+  </div>
+
+  <!-- NEXT RACE COUNTDOWN -->
+  <div class="next-race-hero">
+    <div class="next-race-label">Next Race</div>
+    <div class="next-race-content">
+      <div>
+        <div class="next-race-name">🇸🇦 Saudi Arabian<br>Grand Prix</div>
+        <div class="next-race-circuit">Jeddah Corniche Circuit · Round 2 of 24</div>
+      </div>
+      <div class="countdown" id="countdown">
+        <div class="countdown-unit"><div class="countdown-val" id="cd-days">--</div><div class="countdown-label">Days</div></div>
+        <div class="countdown-unit"><div class="countdown-val" id="cd-hrs">--</div><div class="countdown-label">Hrs</div></div>
+        <div class="countdown-unit"><div class="countdown-val" id="cd-min">--</div><div class="countdown-label">Min</div></div>
+        <div class="countdown-unit"><div class="countdown-val" id="cd-sec">--</div><div class="countdown-label">Sec</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="calendar-section">
+    <div class="calendar-filters">
+      <button class="cal-filter-btn active" onclick="calFilter('all',this)">All Races</button>
+      <button class="cal-filter-btn" onclick="calFilter('upcoming',this)">Upcoming</button>
+      <button class="cal-filter-btn" onclick="calFilter('completed',this)">Completed</button>
+      <button class="cal-filter-btn" onclick="calFilter('sprint',this)">Sprint Weekends</button>
+    </div>
+    <div class="race-list" id="raceList"></div>
+  </div>
+
+  <!-- CIRCUITS STRIP -->
+  <div class="circuits-section">
+    <p class="section-eyebrow">// Circuit Guide</p>
+    <h2 class="section-title">Notable Circuits</h2>
+    <div class="circuits-grid">
+      <a href="#" class="circuit-card"><div class="circuit-country">🇦🇺</div><div class="circuit-name">Albert Park Circuit</div><div class="circuit-meta">Melbourne · 5.278 km<br>16 corners · Lap record: 1:20.235</div></a>
+      <a href="#" class="circuit-card"><div class="circuit-country">🇮🇹</div><div class="circuit-name">Autodromo Nazionale Monza</div><div class="circuit-meta">Milan · 5.793 km<br>11 corners · Lap record: 1:21.046</div></a>
+      <a href="#" class="circuit-card"><div class="circuit-country">🇲🇨</div><div class="circuit-name">Circuit de Monaco</div><div class="circuit-meta">Monte-Carlo · 3.337 km<br>19 corners · Lap record: 1:12.909</div></a>
+      <a href="#" class="circuit-card"><div class="circuit-country">🇬🇧</div><div class="circuit-name">Silverstone Circuit</div><div class="circuit-meta">Northamptonshire · 5.891 km<br>18 corners · Lap record: 1:27.097</div></a>
+      <a href="#" class="circuit-card"><div class="circuit-country">🇯🇵</div><div class="circuit-name">Suzuka International</div><div class="circuit-meta">Suzuka · 5.807 km<br>18 corners · Lap record: 1:30.983</div></a>
+      <a href="#" class="circuit-card"><div class="circuit-country">🇧🇭</div><div class="circuit-name">Bahrain International Circuit</div><div class="circuit-meta">Sakhir · 5.412 km<br>15 corners · Lap record: 1:31.447</div></a>
+    </div>
+  </div>
+
+  <script>
+    const RACES = [
+      {round:1,flag:'🇧🇭',name:'Bahrain Grand Prix',circuit:'Bahrain International Circuit, Sakhir',date:'Mar 16',year:'2025',status:'completed',sprint:false,winner:'Verstappen'},
+      {round:2,flag:'🇸🇦',name:'Saudi Arabian Grand Prix',circuit:'Jeddah Corniche Circuit, Jeddah',date:'Mar 22',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:3,flag:'🇦🇺',name:'Australian Grand Prix',circuit:'Albert Park Circuit, Melbourne',date:'Apr 6',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:4,flag:'🇯🇵',name:'Japanese Grand Prix',circuit:'Suzuka Circuit, Suzuka',date:'Apr 13',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:5,flag:'🇨🇳',name:'Chinese Grand Prix',circuit:'Shanghai International Circuit',date:'Apr 27',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:6,flag:'🇺🇸',name:'Miami Grand Prix',circuit:'Miami International Autodrome',date:'May 4',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:7,flag:'🇮🇹',name:'Emilia Romagna Grand Prix',circuit:'Autodromo Enzo e Dino Ferrari, Imola',date:'May 18',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:8,flag:'🇲🇨',name:'Monaco Grand Prix',circuit:'Circuit de Monaco, Monte-Carlo',date:'May 25',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:9,flag:'🇪🇸',name:'Spanish Grand Prix',circuit:'Circuit de Barcelona-Catalunya',date:'Jun 1',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:10,flag:'🇨🇦',name:'Canadian Grand Prix',circuit:'Circuit Gilles Villeneuve, Montreal',date:'Jun 15',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:11,flag:'🇦🇹',name:'Austrian Grand Prix',circuit:'Red Bull Ring, Spielberg',date:'Jun 29',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:12,flag:'🇬🇧',name:'British Grand Prix',circuit:'Silverstone Circuit, Northamptonshire',date:'Jul 6',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:13,flag:'🇧🇪',name:'Belgian Grand Prix',circuit:'Circuit de Spa-Francorchamps',date:'Jul 27',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:14,flag:'🇭🇺',name:'Hungarian Grand Prix',circuit:'Hungaroring, Budapest',date:'Aug 3',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:15,flag:'🇳🇱',name:'Dutch Grand Prix',circuit:'Circuit Zandvoort',date:'Aug 31',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:16,flag:'🇮🇹',name:'Italian Grand Prix',circuit:'Autodromo Nazionale Monza',date:'Sep 7',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:17,flag:'🇦🇿',name:'Azerbaijan Grand Prix',circuit:'Baku City Circuit',date:'Sep 21',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:18,flag:'🇸🇬',name:'Singapore Grand Prix',circuit:'Marina Bay Street Circuit',date:'Oct 5',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:19,flag:'🇺🇸',name:'United States Grand Prix',circuit:'Circuit of The Americas, Austin',date:'Oct 19',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:20,flag:'🇲🇽',name:'Mexico City Grand Prix',circuit:'Autodromo Hermanos Rodriguez',date:'Oct 26',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:21,flag:'🇧🇷',name:'São Paulo Grand Prix',circuit:'Autodromo Jose Carlos Pace, Interlagos',date:'Nov 9',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:22,flag:'🇺🇸',name:'Las Vegas Grand Prix',circuit:'Las Vegas Strip Circuit',date:'Nov 22',year:'2025',status:'upcoming',sprint:false,winner:null},
+      {round:23,flag:'🇶🇦',name:'Qatar Grand Prix',circuit:'Lusail International Circuit',date:'Nov 30',year:'2025',status:'upcoming',sprint:true,winner:null},
+      {round:24,flag:'🇦🇪',name:'Abu Dhabi Grand Prix',circuit:'Yas Marina Circuit',date:'Dec 7',year:'2025',status:'upcoming',sprint:false,winner:null},
+    ];
+
+    let currentCalFilter = 'all';
+
+    function renderRaces(list) {
+      const container = document.getElementById('raceList');
+      container.innerHTML = '';
+      list.forEach(r => {
+        const row = document.createElement('a');
+        row.href = '#';
+        row.className = `race-row ${r.status}`;
+        row.innerHTML = `
+          <div class="race-round-col">
+            <div class="round-num">${String(r.round).padStart(2,'0')}</div>
+            <div class="round-label">Round</div>
+          </div>
+          <div class="race-info-col">
+            <div class="race-flag-name">
+              <span class="race-flag">${r.flag}</span>
+              <span class="race-name">${r.name}</span>
+            </div>
+            <div class="race-circuit-name">${r.circuit}</div>
+            <div class="race-badges">
+              ${r.status==='upcoming' && r.round===2 ? '<span class="badge badge-next">▶ Next Race</span>' : ''}
+              ${r.sprint ? '<span class="badge badge-sprint">Sprint Weekend</span>' : ''}
+              ${r.status==='completed' ? '<span class="badge badge-done">Completed</span>' : ''}
+            </div>
+          </div>
+          <div class="race-date-col">
+            <div class="race-date-main">${r.date}</div>
+            <div class="race-date-sub">${r.year} Season</div>
+          </div>
+          <div class="winner-col">
+            ${r.winner ? `<div class="winner-label">Winner</div><div class="winner-name">🏆 ${r.winner}</div>` : `<div class="race-date-sub">TBD</div>`}
+          </div>`;
+        container.appendChild(row);
+      });
+    }
+
+    function calFilter(type, btn) {
+      currentCalFilter = type;
+      document.querySelectorAll('.cal-filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const filtered = type==='all' ? RACES : RACES.filter(r => type==='sprint' ? r.sprint : r.status===type);
+      renderRaces(filtered);
+    }
+
+    renderRaces(RACES);
+
+    // Countdown to Saudi GP: March 22, 2025 15:00 UTC (approx)
+    const raceTime = new Date('2025-03-22T15:00:00Z');
+    function updateCountdown() {
+      const now = new Date();
+      const diff = raceTime - now;
+      if (diff <= 0) {
+        document.getElementById('cd-days').textContent = '00';
+        document.getElementById('cd-hrs').textContent = '00';
+        document.getElementById('cd-min').textContent = '00';
+        document.getElementById('cd-sec').textContent = '00';
+        return;
+      }
+      const days = Math.floor(diff/86400000);
+      const hrs  = Math.floor((diff%86400000)/3600000);
+      const min  = Math.floor((diff%3600000)/60000);
+      const sec  = Math.floor((diff%60000)/1000);
+      document.getElementById('cd-days').textContent = String(days).padStart(2,'0');
+      document.getElementById('cd-hrs').textContent  = String(hrs).padStart(2,'0');
+      document.getElementById('cd-min').textContent  = String(min).padStart(2,'0');
+      document.getElementById('cd-sec').textContent  = String(sec).padStart(2,'0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    const cursor=document.getElementById('cursor');const ring=document.getElementById('cursorRing');let mouseX=0,mouseY=0,ringX=0,ringY=0;
+    document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;cursor.style.transform=`translate(${mouseX-5}px,${mouseY-5}px)`;});
+    function animateRing(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;ring.style.transform=`translate(${ringX-18}px,${ringY-18}px)`;requestAnimationFrame(animateRing);}
+    animateRing();
+  </script>
+</body>
+</html>

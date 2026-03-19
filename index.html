@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1 Manager — The Pit Wall</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --red:       #E10600;
+      --red-dim:   #9b0400;
+      --black:     #0a0a0a;
+      --dark:      #111111;
+      --card:      #161616;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #f0f0f0;
+      --muted:     #888;
+      --mono:      'Share Tech Mono', monospace;
+      --display:   'Barlow Condensed', sans-serif;
+      --body:      'Barlow', sans-serif;
+    }
+
+    /* ===== RESET ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 16px;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ===== CUSTOM CURSOR ===== */
+    .cursor {
+      width: 10px; height: 10px;
+      background: var(--red);
+      border-radius: 50%;
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.1s ease;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid rgba(225,6,0,0.5);
+      border-radius: 50%;
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.12s ease, width 0.2s, height 0.2s, border-color 0.2s;
+    }
+    body:has(a:hover) .cursor-ring,
+    body:has(button:hover) .cursor-ring {
+      width: 56px; height: 56px;
+      border-color: var(--red);
+    }
+
+    /* ===== NOISE OVERLAY ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.35;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--red); }
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      cursor: none;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .nav-cta:hover { background: var(--red-dim); transform: scale(1.02); }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding-top: 64px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Speed lines background */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        100deg,
+        transparent,
+        transparent 80px,
+        rgba(255,255,255,0.012) 80px,
+        rgba(255,255,255,0.012) 81px
+      );
+      pointer-events: none;
+    }
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 48px 80px 80px;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hero-tag::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--red);
+    }
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(64px, 8vw, 108px);
+      font-weight: 900;
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .hero-title .line { display: block; overflow: hidden; }
+    .hero-title .line span {
+      display: block;
+      transform: translateY(110%);
+      animation: slideUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+    .hero-title .line:nth-child(1) span { animation-delay: 0.1s; }
+    .hero-title .line:nth-child(2) span { animation-delay: 0.2s; }
+    .hero-title .line:nth-child(3) span { animation-delay: 0.3s; color: var(--red); }
+    @keyframes slideUp {
+      to { transform: translateY(0); }
+    }
+    .hero-sub {
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 420px;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeIn 0.6s ease 0.7s forwards;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      opacity: 0;
+      animation: fadeIn 0.6s ease 0.9s forwards;
+    }
+    .btn-primary {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 16px 36px;
+      cursor: none;
+      text-decoration: none;
+      display: inline-block;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--red-dim); transform: translateY(-2px); }
+    .btn-secondary {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+    .btn-secondary:hover { color: var(--text); }
+    .btn-secondary::after {
+      content: '→';
+      transition: transform 0.2s;
+    }
+    .btn-secondary:hover::after { transform: translateX(4px); }
+
+    /* ===== HERO RIGHT ===== */
+    .hero-right {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-car-visual {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse 60% 40% at 60% 50%, rgba(225,6,0,0.15) 0%, transparent 70%),
+        linear-gradient(135deg, #0a0a0a 0%, #1a0000 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* SVG F1 Car illustration */
+    .f1-car-svg {
+      width: 90%;
+      max-width: 600px;
+      opacity: 0;
+      transform: translateX(60px);
+      animation: carSlide 1s cubic-bezier(0.16,1,0.3,1) 0.4s forwards;
+    }
+    @keyframes carSlide {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    /* Race number overlay */
+    .race-number {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      font-family: var(--display);
+      font-size: 180px;
+      font-weight: 900;
+      color: rgba(225,6,0,0.08);
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* ===== LIVE TICKER ===== */
+    .ticker-bar {
+      background: var(--red);
+      padding: 10px 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .ticker-inner {
+      display: flex;
+      gap: 0;
+      animation: ticker 30s linear infinite;
+      width: max-content;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #fff;
+      padding: 0 48px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .ticker-item::after {
+      content: '◆';
+      font-size: 8px;
+    }
+
+    /* ===== STATS STRIP ===== */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-item {
+      padding: 40px 48px;
+      border-right: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-item:hover { background: rgba(225,6,0,0.04); }
+    .stat-item::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--red);
+      transition: width 0.4s ease;
+    }
+    .stat-item:hover::before { width: 100%; }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .stat-value {
+      font-family: var(--display);
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--text);
+      counter-reset: count;
+    }
+    .stat-value span { color: var(--red); }
+
+    /* ===== SECTION WRAPPER ===== */
+    section { padding: 100px 80px; }
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 60px;
+    }
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+    }
+    .section-link {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: gap 0.2s;
+    }
+    .section-link:hover { gap: 14px; }
+
+    /* ===== DRIVERS GRID ===== */
+    .drivers-section { background: var(--dark); }
+    .drivers-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+    }
+    .driver-card {
+      background: var(--card);
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 3/4;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+      cursor: none;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.3s ease;
+    }
+    .driver-card:hover { transform: scale(1.015); z-index: 2; }
+    .driver-card-bg {
+      position: absolute;
+      inset: 0;
+      transition: transform 0.5s ease;
+    }
+    .driver-card:hover .driver-card-bg { transform: scale(1.05); }
+    /* Each card has a different team color gradient */
+    .driver-card:nth-child(1) .driver-card-bg {
+      background: linear-gradient(160deg, #00D2BE22 0%, #0a0a0a 60%);
+    }
+    .driver-card:nth-child(2) .driver-card-bg {
+      background: linear-gradient(160deg, #DC001422 0%, #0a0a0a 60%);
+    }
+    .driver-card:nth-child(3) .driver-card-bg {
+      background: linear-gradient(160deg, #0067FF22 0%, #0a0a0a 60%);
+    }
+    .driver-card:nth-child(4) .driver-card-bg {
+      background: linear-gradient(160deg, #FF800022 0%, #0a0a0a 60%);
+    }
+    .driver-num {
+      position: absolute;
+      top: 16px; right: 20px;
+      font-family: var(--display);
+      font-size: 72px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.06);
+      line-height: 1;
+      user-select: none;
+    }
+    .driver-team-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+    }
+    .driver-card:nth-child(1) .driver-team-bar { background: #00D2BE; }
+    .driver-card:nth-child(2) .driver-team-bar { background: #DC0014; }
+    .driver-card:nth-child(3) .driver-team-bar { background: #0067FF; }
+    .driver-card:nth-child(4) .driver-team-bar { background: #FF8000; }
+    .driver-avatar {
+      font-size: 64px;
+      line-height: 1;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.8));
+    }
+    .driver-name {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+    .driver-info {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+    .driver-pts {
+      position: absolute;
+      top: 20px; left: 20px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .driver-pts strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    /* ===== RACE SCHEDULE ===== */
+    .schedule-section { background: var(--black); }
+    .race-list { display: flex; flex-direction: column; gap: 2px; }
+    .race-row {
+      display: grid;
+      grid-template-columns: 80px 1fr auto auto;
+      align-items: center;
+      gap: 32px;
+      padding: 24px 32px;
+      background: var(--card);
+      border-left: 3px solid transparent;
+      text-decoration: none;
+      color: var(--text);
+      cursor: none;
+      transition: border-color 0.2s, background 0.2s, padding-left 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .race-row.upcoming { border-left-color: var(--red); }
+    .race-row:hover {
+      background: #1e1e1e;
+      padding-left: 40px;
+    }
+    .race-round {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+    .race-round strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .race-info { }
+    .race-name {
+      font-family: var(--display);
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .race-circuit {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+    }
+    .race-flag { font-size: 28px; }
+    .race-date {
+      text-align: right;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+    }
+    .race-date strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .upcoming-badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--red);
+      color: #fff;
+      padding: 3px 8px;
+      display: inline-block;
+      margin-top: 6px;
+    }
+
+    /* ===== TEAMS SECTION ===== */
+    .teams-section { background: var(--dark); }
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 2px;
+    }
+    .team-card {
+      background: var(--card);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      cursor: none;
+      text-decoration: none;
+      color: var(--text);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .team-card:hover { background: #1c1c1c; }
+    .team-color-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .team-logo-placeholder {
+      font-size: 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .team-name {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .team-pts {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .team-pts strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .team-pos {
+      font-family: var(--display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .team-pos.first { color: #FFD700; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: #080808;
+      border-top: 1px solid var(--border);
+      padding: 60px 80px 40px;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 60px;
+      margin-bottom: 60px;
+    }
+    .footer-brand .nav-logo {
+      display: block;
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 280px;
+    }
+    .footer-col h4 {
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a {
+      font-size: 14px;
+      color: #666;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--text); }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-bottom p {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #444;
+      letter-spacing: 0.08em;
+    }
+    .footer-sdg {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #444;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sdg-badge {
+      background: #00558a;
+      color: #fff;
+      font-family: var(--display);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      text-transform: uppercase;
+    }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== MOBILE MENU TOGGLE (hamburger shown < 900px) ===== */
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: none;
+      background: none;
+      border: none;
+    }
+    .nav-toggle span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text);
+    }
+
+    @media (max-width: 1100px) {
+      .drivers-grid { grid-template-columns: repeat(2, 1fr); }
+      .teams-grid { grid-template-columns: repeat(3, 1fr); }
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .stats-strip .stat-item:nth-child(2) { border-right: none; }
+      .race-row { grid-template-columns: 60px 1fr auto; }
+      .race-flag { display: none; }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    }
+    @media (max-width: 768px) {
+      nav { padding: 0 24px; }
+      .nav-links, .nav-cta { display: none; }
+      .nav-toggle { display: flex; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-right { display: none; }
+      .hero-left { padding: 60px 24px; }
+      section { padding: 60px 24px; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .drivers-grid { grid-template-columns: 1fr 1fr; }
+      .teams-grid { grid-template-columns: 1fr 1fr; }
+      footer { padding: 40px 24px 24px; }
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CURSOR -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">F1 <span>Manager</span></a>
+    <ul class="nav-links">
+      <li><a href="drivers.html">Drivers</a></li>
+      <li><a href="teams.html">Teams</a></li>
+      <li><a href="races.html">Races</a></li>
+      <li><a href="circuits.html">Circuits</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="login.html" class="nav-cta">Sign In</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" style="padding:0">
+    <div class="hero-left">
+      <p class="hero-tag">2025 Season — Live</p>
+      <h1 class="hero-title">
+        <span class="line"><span>The</span></span>
+        <span class="line"><span>Pit</span></span>
+        <span class="line"><span>Wall.</span></span>
+      </h1>
+      <p class="hero-sub">
+        Your complete Formula 1 command centre. Track every driver, dissect every team,
+        race-by-race — from Bahrain to Abu Dhabi.
+      </p>
+      <div class="hero-actions">
+        <a href="drivers.html" class="btn-primary">Explore Drivers</a>
+        <a href="races.html" class="btn-secondary">Race Calendar</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-car-visual">
+        <!-- SVG F1 Car -->
+        <svg class="f1-car-svg" viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <!-- Main body -->
+          <path d="M80 110 L120 70 L300 65 L380 70 L420 90 L440 110 L420 130 L380 140 L120 140 L80 130 Z" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+          <!-- Nose cone -->
+          <path d="M80 110 L40 115 L80 120" fill="#E10600" stroke="#c00000" stroke-width="0.5"/>
+          <!-- Side pods -->
+          <path d="M180 140 L180 155 L340 155 L340 140" fill="#222" stroke="#333" stroke-width="1"/>
+          <path d="M180 70 L180 55 L260 55 L260 70" fill="#222" stroke="#333" stroke-width="1"/>
+          <!-- Front wing -->
+          <path d="M40 115 L20 118 L20 122 L40 120 Z" fill="#E10600" stroke="#c00000" stroke-width="0.5"/>
+          <path d="M20 115 L5 112 L5 128 L20 125" fill="#333" stroke="#444" stroke-width="0.5"/>
+          <!-- Rear wing -->
+          <rect x="415" y="72" width="35" height="4" rx="1" fill="#E10600"/>
+          <rect x="415" y="82" width="35" height="4" rx="1" fill="#333"/>
+          <rect x="448" y="76" width="4" height="50" rx="1" fill="#444"/>
+          <rect x="415" y="126" width="35" height="4" rx="1" fill="#333"/>
+          <!-- Halo -->
+          <path d="M190 68 Q220 50 260 50 Q300 50 320 68" stroke="#555" stroke-width="3" fill="none"/>
+          <line x1="255" y1="50" x2="255" y2="68" stroke="#555" stroke-width="4"/>
+          <!-- Wheels front -->
+          <circle cx="130" cy="148" r="22" fill="#111" stroke="#333" stroke-width="2"/>
+          <circle cx="130" cy="148" r="14" fill="#1a1a1a"/>
+          <circle cx="130" cy="148" r="5" fill="#E10600"/>
+          <!-- Wheels rear -->
+          <circle cx="380" cy="148" r="26" fill="#111" stroke="#333" stroke-width="2"/>
+          <circle cx="380" cy="148" r="17" fill="#1a1a1a"/>
+          <circle cx="380" cy="148" r="6" fill="#E10600"/>
+          <!-- Cockpit -->
+          <ellipse cx="230" cy="78" rx="30" ry="12" fill="#0d0d0d" stroke="#333" stroke-width="1"/>
+          <!-- Speed stripes -->
+          <line x1="120" y1="85" x2="360" y2="85" stroke="#E10600" stroke-width="1.5" opacity="0.4"/>
+          <line x1="120" y1="125" x2="360" y2="125" stroke="#E10600" stroke-width="1.5" opacity="0.4"/>
+          <!-- DRS flap -->
+          <rect x="415" y="68" width="35" height="2" rx="0.5" fill="#E10600" opacity="0.6"/>
+        </svg>
+        <div class="race-number">1</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-bar">
+    <div class="ticker-inner">
+      <span class="ticker-item">Verstappen leads standings — 77 pts</span>
+      <span class="ticker-item">Next Race: Saudi Arabian GP — Mar 22</span>
+      <span class="ticker-item">Ferrari unveil SF-25 updates</span>
+      <span class="ticker-item">Hamilton completes first Ferrari test</span>
+      <span class="ticker-item">McLaren fastest in FP1 — Piastri P1</span>
+      <span class="ticker-item">F1 Net Zero 2030 initiative launched</span>
+      <span class="ticker-item">Verstappen leads standings — 77 pts</span>
+      <span class="ticker-item">Next Race: Saudi Arabian GP — Mar 22</span>
+      <span class="ticker-item">Ferrari unveil SF-25 updates</span>
+      <span class="ticker-item">Hamilton completes first Ferrari test</span>
+      <span class="ticker-item">McLaren fastest in FP1 — Piastri P1</span>
+      <span class="ticker-item">F1 Net Zero 2030 initiative launched</span>
+    </div>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip reveal">
+    <div class="stat-item">
+      <p class="stat-label">Drivers</p>
+      <p class="stat-value">20<span>+</span></p>
+    </div>
+    <div class="stat-item">
+      <p class="stat-label">Teams</p>
+      <p class="stat-value">10</p>
+    </div>
+    <div class="stat-item">
+      <p class="stat-label">Races in 2025</p>
+      <p class="stat-value">24</p>
+    </div>
+    <div class="stat-item">
+      <p class="stat-label">Countries</p>
+      <p class="stat-value">21</p>
+    </div>
+  </div>
+
+  <!-- DRIVERS SECTION -->
+  <section class="drivers-section">
+    <div class="section-header reveal">
+      <div>
+        <p class="section-eyebrow">// Championship Standings</p>
+        <h2 class="section-title">Top<br>Drivers</h2>
+      </div>
+      <a href="drivers.html" class="section-link">All Drivers</a>
+    </div>
+    <div class="drivers-grid reveal">
+      <!-- Driver 1 -->
+      <a href="drivers.html#verstappen" class="driver-card">
+        <div class="driver-card-bg"></div>
+        <div class="driver-team-bar"></div>
+        <div class="driver-num">1</div>
+        <div class="driver-pts">
+          <span>PTS</span>
+          <strong>77</strong>
+        </div>
+        <div class="driver-avatar">🏆</div>
+        <div class="driver-name">Verstappen</div>
+        <div class="driver-info">NED · Red Bull Racing</div>
+      </a>
+      <!-- Driver 2 -->
+      <a href="drivers.html#leclerc" class="driver-card">
+        <div class="driver-card-bg"></div>
+        <div class="driver-team-bar"></div>
+        <div class="driver-num">16</div>
+        <div class="driver-pts">
+          <span>PTS</span>
+          <strong>61</strong>
+        </div>
+        <div class="driver-avatar">🏎️</div>
+        <div class="driver-name">Leclerc</div>
+        <div class="driver-info">MON · Scuderia Ferrari</div>
+      </a>
+      <!-- Driver 3 -->
+      <a href="drivers.html#norris" class="driver-card">
+        <div class="driver-card-bg"></div>
+        <div class="driver-team-bar"></div>
+        <div class="driver-num">4</div>
+        <div class="driver-pts">
+          <span>PTS</span>
+          <strong>58</strong>
+        </div>
+        <div class="driver-avatar">🎯</div>
+        <div class="driver-name">Norris</div>
+        <div class="driver-info">GBR · McLaren</div>
+      </a>
+      <!-- Driver 4 -->
+      <a href="drivers.html#piastri" class="driver-card">
+        <div class="driver-card-bg"></div>
+        <div class="driver-team-bar"></div>
+        <div class="driver-num">81</div>
+        <div class="driver-pts">
+          <span>PTS</span>
+          <strong>49</strong>
+        </div>
+        <div class="driver-avatar">⚡</div>
+        <div class="driver-name">Piastri</div>
+        <div class="driver-info">AUS · McLaren</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- RACE SCHEDULE -->
+  <section class="schedule-section">
+    <div class="section-header reveal">
+      <div>
+        <p class="section-eyebrow">// 2025 Calendar</p>
+        <h2 class="section-title">Upcoming<br>Races</h2>
+      </div>
+      <a href="races.html" class="section-link">Full Calendar</a>
+    </div>
+    <div class="race-list reveal">
+      <a href="races.html#bahrain" class="race-row">
+        <div class="race-round"><strong>01</strong>RND</div>
+        <div class="race-info">
+          <div class="race-name">Bahrain Grand Prix</div>
+          <div class="race-circuit">Bahrain International Circuit · Sakhir</div>
+        </div>
+        <div class="race-flag">🇧🇭</div>
+        <div class="race-date"><strong>Mar 16</strong>2025</div>
+      </a>
+      <a href="races.html#saudi" class="race-row upcoming">
+        <div class="race-round"><strong>02</strong>RND</div>
+        <div class="race-info">
+          <div class="race-name">Saudi Arabian Grand Prix</div>
+          <div class="race-circuit">Jeddah Corniche Circuit · Jeddah</div>
+          <div class="upcoming-badge">▶ Next Race</div>
+        </div>
+        <div class="race-flag">🇸🇦</div>
+        <div class="race-date"><strong>Mar 22</strong>2025</div>
+      </a>
+      <a href="races.html#australia" class="race-row">
+        <div class="race-round"><strong>03</strong>RND</div>
+        <div class="race-info">
+          <div class="race-name">Australian Grand Prix</div>
+          <div class="race-circuit">Albert Park Circuit · Melbourne</div>
+        </div>
+        <div class="race-flag">🇦🇺</div>
+        <div class="race-date"><strong>Apr 06</strong>2025</div>
+      </a>
+      <a href="races.html#japan" class="race-row">
+        <div class="race-round"><strong>04</strong>RND</div>
+        <div class="race-info">
+          <div class="race-name">Japanese Grand Prix</div>
+          <div class="race-circuit">Suzuka International Racing Course · Suzuka</div>
+        </div>
+        <div class="race-flag">🇯🇵</div>
+        <div class="race-date"><strong>Apr 13</strong>2025</div>
+      </a>
+      <a href="races.html#china" class="race-row">
+        <div class="race-round"><strong>05</strong>RND</div>
+        <div class="race-info">
+          <div class="race-name">Chinese Grand Prix</div>
+          <div class="race-circuit">Shanghai International Circuit · Shanghai</div>
+        </div>
+        <div class="race-flag">🇨🇳</div>
+        <div class="race-date"><strong>Apr 27</strong>2025</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- TEAMS -->
+  <section class="teams-section">
+    <div class="section-header reveal">
+      <div>
+        <p class="section-eyebrow">// Constructors</p>
+        <h2 class="section-title">The<br>Teams</h2>
+      </div>
+      <a href="teams.html" class="section-link">All Teams</a>
+    </div>
+    <div class="teams-grid reveal">
+      <a href="teams.html#redbull" class="team-card">
+        <div class="team-color-bar" style="background:#3671C6"></div>
+        <div class="team-logo-placeholder">🐂</div>
+        <div class="team-name">Red Bull</div>
+        <div class="team-pts"><span>PTS</span><strong>110</strong></div>
+        <div class="team-pos first">P1</div>
+      </a>
+      <a href="teams.html#ferrari" class="team-card">
+        <div class="team-color-bar" style="background:#E8002D"></div>
+        <div class="team-logo-placeholder">🐴</div>
+        <div class="team-name">Ferrari</div>
+        <div class="team-pts"><span>PTS</span><strong>97</strong></div>
+        <div class="team-pos">P2</div>
+      </a>
+      <a href="teams.html#mclaren" class="team-card">
+        <div class="team-color-bar" style="background:#FF8000"></div>
+        <div class="team-logo-placeholder">🦅</div>
+        <div class="team-name">McLaren</div>
+        <div class="team-pts"><span>PTS</span><strong>90</strong></div>
+        <div class="team-pos">P3</div>
+      </a>
+      <a href="teams.html#mercedes" class="team-card">
+        <div class="team-color-bar" style="background:#27F4D2"></div>
+        <div class="team-logo-placeholder">⭐</div>
+        <div class="team-name">Mercedes</div>
+        <div class="team-pts"><span>PTS</span><strong>72</strong></div>
+        <div class="team-pos">P4</div>
+      </a>
+      <a href="teams.html#aston" class="team-card">
+        <div class="team-color-bar" style="background:#229971"></div>
+        <div class="team-logo-placeholder">🦁</div>
+        <div class="team-name">Aston Martin</div>
+        <div class="team-pts"><span>PTS</span><strong>34</strong></div>
+        <div class="team-pos">P5</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">F1 <span>Manager</span></a>
+        <p>Your complete Formula 1 information hub. Driver profiles, team standings, race calendars, and circuit guides — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="drivers.html">Drivers</a></li>
+          <li><a href="teams.html">Teams</a></li>
+          <li><a href="races.html">Race Calendar</a></li>
+          <li><a href="circuits.html">Circuits</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <ul>
+          <li><a href="login.html">Sign In</a></li>
+          <li><a href="register.html">Register</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="contact.html">Feedback</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="#">Web Programming Lab</a></li>
+          <li><a href="#">GitHub Repository</a></li>
+          <li><a href="#">Documentation</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 F1 Manager — Web Programming Lab Project</p>
+      <div class="footer-sdg">
+        <span class="sdg-badge">SDG 13</span>
+        Climate Action — F1 Net Zero 2030
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS ===== -->
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mouseX = 0, mouseY = 0;
+    let ringX = 0, ringY = 0;
+
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      cursor.style.transform = `translate(${mouseX - 5}px, ${mouseY - 5}px)`;
+    });
+
+    function animateRing() {
+      ringX += (mouseX - ringX) * 0.12;
+      ringY += (mouseY - ringY) * 0.12;
+      ring.style.transform = `translate(${ringX - 18}px, ${ringY - 18}px)`;
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => observer.observe(el));
+
+    // Counter animation for stats
+    function animateCounter(el, target, duration = 1200) {
+      let start = 0;
+      const step = timestamp => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        el.textContent = Math.floor(progress * target);
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target;
+      };
+      requestAnimationFrame(step);
+    }
+
+    // Trigger counters when stats strip is visible
+    const statsObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          document.querySelectorAll('.stat-value').forEach(el => {
+            const num = parseInt(el.textContent);
+            const span = el.querySelector('span');
+            el.textContent = '0';
+            if (span) el.appendChild(span);
+            animateCounter(el.childNodes[0] || el, num);
+          });
+          statsObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+    const statsStrip = document.querySelector('.stats-strip');
+    if (statsStrip) statsObserver.observe(statsStrip);
+
+    // Nav toggle (mobile)
+    document.getElementById('navToggle').addEventListener('click', () => {
+      const links = document.querySelector('.nav-links');
+      if (links) {
+        links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+        links.style.flexDirection = 'column';
+        links.style.position = 'absolute';
+        links.style.top = '64px';
+        links.style.left = '0';
+        links.style.right = '0';
+        links.style.background = 'rgba(10,10,10,0.97)';
+        links.style.padding = '24px';
+        links.style.gap = '20px';
+      }
+    });
+  </script>
+</body>
+</html>

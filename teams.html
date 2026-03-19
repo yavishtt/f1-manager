@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Teams — F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--red:#E10600;--red-dim:#9b0400;--black:#0a0a0a;--dark:#111111;--card:#161616;--border:rgba(255,255,255,0.07);--text:#f0f0f0;--muted:#888;--mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--black);color:var(--text);font-family:var(--body);overflow-x:hidden;cursor:none;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.35;}
+    .cursor{width:10px;height:10px;background:var(--red);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;}
+    .cursor-ring{width:36px;height:36px;border:1px solid rgba(225,6,0,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.9);backdrop-filter:blur(12px);}
+    .nav-logo{font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;color:var(--text);text-decoration:none;}
+    .nav-logo span{color:var(--red);}
+    .nav-links{display:flex;gap:36px;list-style:none;}
+    .nav-links a{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+    .nav-links a:hover,.nav-links a.active{color:var(--text);}
+    .nav-cta{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;background:var(--red);color:#fff;border:none;padding:10px 24px;cursor:none;text-decoration:none;}
+
+    .page-header{padding:120px 80px 60px;background:var(--dark);position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+    .page-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 80% 50%,rgba(225,6,0,0.07) 0%,transparent 70%);}
+    .page-header-bg{position:absolute;right:80px;bottom:-20px;font-family:var(--display);font-size:220px;font-weight:900;color:rgba(225,6,0,0.04);line-height:1;user-select:none;pointer-events:none;}
+    .breadcrumb{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;}
+    .breadcrumb span{color:var(--red);}
+    .page-title{font-family:var(--display);font-size:clamp(60px,8vw,100px);font-weight:900;text-transform:uppercase;line-height:0.9;letter-spacing:-0.02em;position:relative;z-index:2;}
+    .page-title em{color:var(--red);font-style:normal;}
+    .page-desc{font-size:15px;color:var(--muted);margin-top:20px;max-width:500px;line-height:1.7;position:relative;z-index:2;}
+
+    /* ── STANDINGS TABLE ── */
+    .standings-section{padding:60px 80px 0;}
+    .section-label{font-family:var(--mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
+    .standings-table{width:100%;border-collapse:collapse;}
+    .standings-table th{font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
+    .standings-header span{font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);}
+    .standings-header{padding:10px 14px;border-bottom:1px solid var(--border);}
+    .standings-table td{padding:0;border-bottom:1px solid var(--border);}
+    .standings-table tr:last-child td{border-bottom:none;}
+    .standings-row{display:grid;grid-template-columns:48px 100px 1fr 90px 80px 80px;align-items:center;padding:14px 14px;gap:12px;transition:background 0.15s;}
+    .standings-row:hover{background:rgba(255,255,255,0.025);}
+    .s-pos{font-family:var(--display);font-size:22px;font-weight:900;color:var(--muted);}
+    .s-pos.p1{color:var(--red);}
+    .s-logo{width:44px;height:28px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.85;}
+    .s-logo-fallback{width:44px;height:28px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+    .s-name{font-family:var(--display);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;padding-left:14px;}
+    .s-bar-wrap{padding-right:20px;}
+    .s-bar-track{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+    .s-bar-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(0.16,1,0.3,1);}
+    .s-pts{font-family:var(--display);font-size:20px;font-weight:900;}
+    .s-wins{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.08em;}
+
+    /* ── TEAM CARDS ── */
+    .teams-grid-section{padding:50px 80px 80px;}
+    .teams-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;}
+    .team-card{background:var(--card);position:relative;overflow:hidden;transition:background 0.2s;}
+    .team-card:hover{background:#1c1c1c;}
+    .team-color-bar{position:absolute;top:0;left:0;width:100%;height:4px;}
+    .team-card-inner{padding:36px 36px 32px;}
+    .team-logo-wrap{height:60px;display:flex;align-items:center;margin-bottom:24px;}
+    .team-logo-svg svg{width:130px;height:44px;display:block;}
+    .s-logo-wrap{display:flex;align-items:center;}
+    .s-logo-wrap .team-logo-svg svg{width:90px;height:30px;}
+    .team-full-name{font-family:var(--display);font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:0.02em;line-height:1.05;margin-bottom:6px;}
+    .team-base{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:24px;}
+    .team-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+    .tstat .tl{font-family:var(--mono);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+    .tstat .tv{font-family:var(--display);font-size:24px;font-weight:900;line-height:1;}
+    .team-drivers-label{font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+    .team-drivers-row{display:flex;gap:10px;}
+    .driver-chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:10px 14px;flex:1;}
+    .driver-chip-num{font-family:var(--display);font-size:22px;font-weight:900;line-height:1;}
+    .driver-chip-info{}
+    .driver-chip-name{font-family:var(--display);font-size:14px;font-weight:700;text-transform:uppercase;line-height:1;}
+    .driver-chip-nat{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;margin-top:2px;}
+    .team-spec-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+    .spec-tag{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;background:var(--black);border:1px solid var(--border);color:var(--muted);padding:4px 10px;}
+
+    @media(max-width:1000px){.teams-grid{grid-template-columns:1fr;}.standings-row{grid-template-columns:36px 50px 1fr 60px 60px;}.s-wins{display:none;}}
+    @media(max-width:800px){.standings-section,.teams-grid-section,.page-header{padding-left:24px;padding-right:24px;}nav{padding:0 24px;}.nav-links{display:none;}}
+  </style>
+</head>
+<body>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <nav>
+    <a href="index.html" class="nav-logo">F1 <span>Manager</span></a>
+    <ul class="nav-links">
+      <li><a href="drivers.html">Drivers</a></li>
+      <li><a href="teams.html" class="active">Teams</a></li>
+      <li><a href="races.html">Races</a></li>
+      <li><a href="circuits.html">Circuits</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="login.html" class="nav-cta">Sign In</a>
+  </nav>
+
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">Home</a> <span>/</span> Teams</div>
+    <h1 class="page-title">2025<br><em>Teams</em></h1>
+    <p class="page-desc">The 10 constructors battling for the 2025 Formula 1 Constructors' Championship. Every point counts.</p>
+    <div class="page-header-bg">T</div>
+  </div>
+
+  <!-- STANDINGS -->
+  <div class="standings-section">
+    <p class="section-label">Constructors' Championship Standings</p>
+    <table class="standings-table" id="standingsTable"></table>
+  </div>
+
+  <!-- TEAM CARDS -->
+  <div class="teams-grid-section">
+    <p class="section-label" style="margin-bottom:24px">Team Profiles</p>
+    <div class="teams-grid" id="teamsGrid"></div>
+  </div>
+
+  <script>
+  // ── Inline SVG logos — zero external dependencies, always works offline
+  const LOGO_SVG = {
+    'red-bull': `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="22" r="17" fill="#0d1b4b"/><circle cx="22" cy="22" r="17" fill="none" stroke="#3671C6" stroke-width="1.5"/><polygon points="22,9 30,31 14,31" fill="#CC1E1E"/><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="12" fill="#3671C6" letter-spacing="1">RED BULL</text><text x="46" y="32" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">RACING</text></svg>`,
+    'ferrari':  `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="6" width="30" height="32" rx="2" fill="#E8002D"/><text x="20" y="29" font-family="Georgia,serif" font-size="24" fill="#FFCC00" text-anchor="middle" font-style="italic" font-weight="bold">SF</text><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="14" fill="#E8002D" letter-spacing="0.5">FERRARI</text><text x="46" y="31" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">SCUDERIA</text></svg>`,
+    'mclaren':  `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><ellipse cx="22" cy="22" rx="18" ry="12" fill="#FF8000"/><ellipse cx="22" cy="22" rx="11" ry="6.5" fill="#111"/><text x="46" y="18" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="15" fill="#FF8000" letter-spacing="0.5">McLAREN</text><text x="46" y="32" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">F1 TEAM</text></svg>`,
+    'mercedes': `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="22" r="17" fill="none" stroke="#27F4D2" stroke-width="1.5"/><line x1="22" y1="5" x2="22" y2="22" stroke="#27F4D2" stroke-width="2"/><line x1="22" y1="22" x2="36.7" y2="30.5" stroke="#27F4D2" stroke-width="2"/><line x1="22" y1="22" x2="7.3" y2="30.5" stroke="#27F4D2" stroke-width="2"/><text x="46" y="16" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="11" fill="#27F4D2" letter-spacing="1">MERCEDES</text><text x="46" y="29" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="1">AMG PETRONAS</text></svg>`,
+    'aston':    `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><ellipse cx="22" cy="22" rx="18" ry="11" fill="none" stroke="#229971" stroke-width="2"/><line x1="4" y1="22" x2="40" y2="22" stroke="#229971" stroke-width="1.5"/><text x="22" y="22" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="10" fill="#229971" text-anchor="middle" dy="4">AM</text><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="12" fill="#229971" letter-spacing="0.5">ASTON MARTIN</text><text x="46" y="31" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="1">ARAMCO F1</text></svg>`,
+    'alpine':   `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><polygon points="22,5 38,36 6,36" fill="none" stroke="#0093CC" stroke-width="2"/><line x1="14" y1="25" x2="30" y2="25" stroke="#0093CC" stroke-width="1.5"/><text x="46" y="18" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="15" fill="#0093CC" letter-spacing="1">ALPINE</text><text x="46" y="32" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">BWT F1 TEAM</text></svg>`,
+    'haas':     `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="11" height="24" rx="1" fill="#B6BABD"/><rect x="21" y="10" width="11" height="24" rx="1" fill="#B6BABD"/><rect x="13" y="19" width="10" height="6" fill="#B6BABD"/><text x="46" y="20" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="17" fill="#B6BABD" letter-spacing="2">HAAS</text><text x="46" y="33" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">F1 TEAM</text></svg>`,
+    'rb':       `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="22" r="17" fill="#6692FF" opacity="0.1"/><circle cx="22" cy="22" r="17" fill="none" stroke="#6692FF" stroke-width="1.5"/><text x="22" y="27" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="15" fill="#6692FF" text-anchor="middle" letter-spacing="1">RB</text><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="13" fill="#6692FF" letter-spacing="1">VISA RB</text><text x="46" y="31" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">F1 TEAM</text></svg>`,
+    'williams': `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="15" width="34" height="14" rx="7" fill="#064CD4"/><text x="22" y="25" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="8.5" fill="#fff" text-anchor="middle" letter-spacing="1">WILLIAMS</text><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="14" fill="#64C4FF" letter-spacing="0.5">WILLIAMS</text><text x="46" y="31" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="2">RACING</text></svg>`,
+    'sauber':   `<svg viewBox="0 0 130 44" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="22" r="17" fill="none" stroke="#00CF46" stroke-width="1.5"/><circle cx="22" cy="22" r="8" fill="#00CF46"/><circle cx="22" cy="22" r="4" fill="#111"/><text x="46" y="17" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="12" fill="#00CF46" letter-spacing="0.5">KICK SAUBER</text><text x="46" y="31" font-family="Barlow Condensed,sans-serif" font-weight="600" font-size="9" fill="#666" letter-spacing="1">→ AUDI 2026</text></svg>`,
+  };
+  function logoHTML(id){ return `<div class="team-logo-svg">${LOGO_SVG[id]||''}</div>`; }
+
+  const TEAMS = [
+    {id:'mclaren',  name:'McLaren Formula 1 Team',     short:'McLaren',       color:'#FF8000',base:'Woking, UK',      pos:1,pts:266,wins:8,poles:4,
+     drivers:[{num:4,name:'Norris',nat:'🇬🇧'},{num:81,name:'Piastri',nat:'🇦🇺'}],
+     specs:['Mercedes PU','Rear-pull rod','Papaya livery'],champs:9,founded:1963},
+    {id:'ferrari',  name:'Scuderia Ferrari HP',         short:'Ferrari',       color:'#E8002D',base:'Maranello, ITA', pos:2,pts:252,wins:6,poles:8,
+     drivers:[{num:16,name:'Leclerc',nat:'🇲🇨'},{num:44,name:'Hamilton',nat:'🇬🇧'}],
+     specs:['Ferrari PU','Side pull rod','Iconic Rosso'],champs:16,founded:1950},
+    {id:'red-bull', name:'Oracle Red Bull Racing',      short:'Red Bull',      color:'#3671C6',base:'Milton Keynes, UK',pos:3,pts:235,wins:5,poles:3,
+     drivers:[{num:1,name:'Verstappen',nat:'🇳🇱'},{num:11,name:'Pérez',nat:'🇲🇽'}],
+     specs:['Honda RBPT PU','Pull rod F&R','RB21 aero'],champs:6,founded:2005},
+    {id:'mercedes', name:'Mercedes-AMG Petronas F1',    short:'Mercedes',      color:'#27F4D2',base:'Brackley, UK',   pos:4,pts:156,wins:1,poles:3,
+     drivers:[{num:63,name:'Russell',nat:'🇬🇧'},{num:12,name:'Antonelli',nat:'🇮🇹'}],
+     specs:['Mercedes PU','Rear pull rod','W16 concept'],champs:8,founded:1954},
+    {id:'aston',    name:'Aston Martin Aramco F1',      short:'Aston Martin',  color:'#229971',base:'Silverstone, UK',pos:5,pts:94,wins:0,poles:0,
+     drivers:[{num:14,name:'Alonso',nat:'🇪🇸'},{num:18,name:'Stroll',nat:'🇨🇦'}],
+     specs:['Honda RBPT PU','AMR25 chassis','Bottle green'],champs:0,founded:2021},
+    {id:'alpine',   name:'BWT Alpine F1 Team',          short:'Alpine',        color:'#0093CC',base:'Enstone, UK',    pos:6,pts:72,wins:0,poles:0,
+     drivers:[{num:10,name:'Gasly',nat:'🇫🇷'},{num:7,name:'Doohan',nat:'🇦🇺'}],
+     specs:['Renault PU','Rear pull rod','Pink & Blue'],champs:2,founded:1981},
+    {id:'haas',     name:'MoneyGram Haas F1 Team',      short:'Haas',          color:'#B6BABD',base:'Kannapolis, USA',pos:7,pts:58,wins:0,poles:0,
+     drivers:[{num:31,name:'Ocon',nat:'🇫🇷'},{num:87,name:'Bearman',nat:'🇬🇧'}],
+     specs:['Ferrari PU','Pull rod rear','VF-25 chassis'],champs:0,founded:2016},
+    {id:'rb',       name:'Visa Cash App RB F1',         short:'RB',            color:'#6692FF',base:'Faenza, ITA',    pos:8,pts:46,wins:0,poles:1,
+     drivers:[{num:22,name:'Tsunoda',nat:'🇯🇵'},{num:30,name:'Lawson',nat:'🇳🇿'}],
+     specs:['Honda RBPT PU','VCARB 02','Sister team'],champs:0,founded:2006},
+    {id:'williams', name:'Williams Racing',             short:'Williams',      color:'#64C4FF',base:'Grove, UK',       pos:9,pts:51,wins:0,poles:0,
+     drivers:[{num:23,name:'Albon',nat:'🇹🇭'},{num:55,name:'Sainz',nat:'🇪🇸'}],
+     specs:['Mercedes PU','FW47 chassis','Heritage blue'],champs:9,founded:1977},
+    {id:'sauber',   name:'Stake F1 Team Kick Sauber',  short:'Sauber',        color:'#00CF46',base:'Hinwil, SUI',     pos:10,pts:4,wins:0,poles:0,
+     drivers:[{num:27,name:'Hülkenberg',nat:'🇩🇪'},{num:5,name:'Bortoleto',nat:'🇧🇷'}],
+     specs:['Ferrari PU','Transitional year','2026 Audi'],champs:0,founded:1993},
+  ];
+
+  const maxPts = TEAMS[0].pts;
+
+  // ── STANDINGS TABLE
+  const table = document.getElementById('standingsTable');
+  const hdr = document.createElement('tr');
+  hdr.innerHTML = `<td><div class="standings-row standings-header">
+    <span></span>
+    <span></span>
+    <span>Team</span>
+    <span>Points Bar</span>
+    <span>Pts</span>
+    <span>Wins</span>
+  </div></td>`;
+  table.appendChild(hdr);
+
+  TEAMS.forEach((t,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>
+      <div class="standings-row">
+        <span class="s-pos${i===0?' p1':''}">${t.pos}</span>
+        <span class="s-logo-wrap">${logoHTML(t.id)}</span>
+        <span class="s-name" style="color:${t.color}">${t.short}</span>
+        <span class="s-bar-wrap">
+          <div class="s-bar-track">
+            <div class="s-bar-fill" id="bar-${t.id}" style="width:0%;background:${t.color}"></div>
+          </div>
+        </span>
+        <span class="s-pts" style="color:${t.color}">${t.pts}</span>
+        <span class="s-wins">${t.wins}W</span>
+      </div>
+    </td>`;
+    table.appendChild(tr);
+  });
+
+  // animate bars
+  requestAnimationFrame(()=>setTimeout(()=>{
+    TEAMS.forEach(t=>{
+      const el=document.getElementById('bar-'+t.id);
+      if(el) el.style.width=(t.pts/maxPts*100)+'%';
+    });
+  },200));
+
+  // ── TEAM CARDS
+  const grid = document.getElementById('teamsGrid');
+  TEAMS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'team-card';
+    card.innerHTML = `
+      <div class="team-color-bar" style="background:${t.color}"></div>
+      <div class="team-card-inner">
+        <div class="team-logo-wrap">${logoHTML(t.id)}</div>
+        <div class="team-full-name" style="color:${t.color}">${t.short}</div>
+        <div class="team-base">📍 ${t.base} · Est. ${t.founded}</div>
+        <div class="team-stats-grid">
+          <div class="tstat"><div class="tl">Position</div><div class="tv">P${t.pos}</div></div>
+          <div class="tstat"><div class="tl">Points</div><div class="tv">${t.pts}</div></div>
+          <div class="tstat"><div class="tl">Wins</div><div class="tv">${t.wins}</div></div>
+          <div class="tstat"><div class="tl">Championships</div><div class="tv">${t.champs}</div></div>
+        </div>
+        <div class="team-drivers-label">2025 Driver Lineup</div>
+        <div class="team-drivers-row">
+          ${t.drivers.map(d=>`
+            <div class="driver-chip">
+              <span class="driver-chip-num" style="color:${t.color}">${d.num}</span>
+              <div class="driver-chip-info">
+                <div class="driver-chip-name">${d.name}</div>
+                <div class="driver-chip-nat">${d.nat}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="team-spec-row">
+          ${t.specs.map(s=>`<span class="spec-tag">${s}</span>`).join('')}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  // cursor
+  const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+  let mouseX=0,mouseY=0,ringX=0,ringY=0;
+  document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;cursor.style.transform=`translate(${mouseX-5}px,${mouseY-5}px)`;});
+  function animateRing(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;ring.style.transform=`translate(${ringX-18}px,${ringY-18}px)`;requestAnimationFrame(animateRing);}
+  animateRing();
+  </script>
+</body>
+</html>
