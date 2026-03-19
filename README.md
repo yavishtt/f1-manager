@@ -12,7 +12,7 @@ Inspired by CricBuzz but for Formula 1 — live standings, driver profiles, circ
 
 ## 📌 Project Info
 - **Course:** Web Programming Lab
-- **Team Members:** [Yavishtt], [Jenil], [Manasvi]
+- **Team Members:** Yavishtt, Jenil, Manasvi
 - **SDG Focus:** SDG 13 — Climate Action (F1 Net Zero 2030 initiative)
 
 ---
